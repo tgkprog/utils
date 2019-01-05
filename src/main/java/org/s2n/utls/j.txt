@@ -1,0 +1,36 @@
+public class FinalUnsafeFields {
+    private static final Unsafe unsafe;
+    static
+    {
+        try
+        {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            unsafe = (Unsafe)field.get(null);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+ 
+ 
+    public static void main(String[] args) throws NoSuchFieldException {
+        updateFinal();
+        updateFinalStatic();
+    }
+ 
+    private static void updateFinalStatic() throws NoSuchFieldException {
+        System.out.println( "Original static final value = " + SafeKlass.getNotSoConstant() );
+        //we need a field to update
+        final Field fieldToUpdate = SafeKlass.class.getDeclaredField( "NOT_SO_CONSTANT" );
+        //this is a 'base'. Usually a Class object will be returned here.
+        final Object base = unsafe.staticFieldBase( fieldToUpdate );
+        //this is an 'offset'
+        final long offset = unsafe.staticFieldOffset( fieldToUpdate );
+        //actual update
+        unsafe.putObject( base, offset, 145 );
+        //ensure the value was updated
+        System.out.println( "Updated static final value = " + SafeKlass.getNotSoConstant() );
+    }
+ 
